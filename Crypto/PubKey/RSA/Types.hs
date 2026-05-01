@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- |
@@ -22,6 +23,8 @@ module Crypto.PubKey.RSA.Types (
 
 import Crypto.Internal.Imports
 import Data.Data
+
+import GHC.Generics
 
 -- | Blinder which is used to obfuscate the timing
 -- of the decryption primitive (used by decryption and signing).
@@ -51,7 +54,7 @@ data PublicKey = PublicKey
     , public_e :: Integer
     -- ^ public exponent e
     }
-    deriving (Show, Read, Eq, Data)
+    deriving (Show, Read, Eq, Data, Generic)
 
 instance NFData PublicKey where
     rnf (PublicKey sz n e) = rnf n `seq` rnf e `seq` sz `seq` ()
@@ -81,7 +84,7 @@ data PrivateKey = PrivateKey
     , private_qinv :: Integer
     -- ^ q^(-1) mod p
     }
-    deriving (Show, Read, Eq, Data)
+    deriving (Show, Read, Eq, Data, Generic)
 
 instance NFData PrivateKey where
     rnf (PrivateKey pub d p q dp dq qinv) =
