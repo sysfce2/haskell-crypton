@@ -110,9 +110,12 @@ toPoint s
 
 -- | Add a point to another point
 pointAdd :: Point -> Point -> Point
-pointAdd a b = withNewPoint $ \dx dy ->
-    withPoint a $ \ax ay -> withPoint b $ \bx by ->
-        ccrypton_p256e_point_add ax ay bx by dx dy
+pointAdd a b
+    | pointIsAtInfinity a = b
+    | pointIsAtInfinity b = a
+    | otherwise = withNewPoint $ \dx dy ->
+        withPoint a $ \ax ay -> withPoint b $ \bx by ->
+            ccrypton_p256e_point_add ax ay bx by dx dy
 
 -- | Negate a point
 pointNegate :: Point -> Point
