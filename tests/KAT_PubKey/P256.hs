@@ -180,10 +180,12 @@ tests =
             pe2 = ECC.pointMul curve (unP256 r2) curveGen
             pR = P256.toPoint (P256.scalarAdd (unP256Scalar r1) (unP256Scalar r2))
             peR = ECC.pointAdd curve pe1 pe2
-         in propertyHold
-                [ eqTest "p256" pR (P256.pointAdd p1 p2)
-                , eqTest "ecc" peR (pointP256ToECC pR)
-                ]
+         in (unP256 r1 + unP256 r2) `mod` curveN
+                /= 0
+                    ==> propertyHold
+                        [ eqTest "p256" pR (P256.pointAdd p1 p2)
+                        , eqTest "ecc" peR (pointP256ToECC pR)
+                        ]
 
     propertyPointNegate r =
         let p = P256.toPoint (unP256Scalar r)
