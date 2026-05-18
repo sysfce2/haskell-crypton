@@ -40,7 +40,9 @@ curveN = ECC.ecc_n . ECC.common_curve $ curve
 curveGen = ECC.ecc_g . ECC.common_curve $ curve
 
 pointP256ToECC :: P256.Point -> ECC.Point
-pointP256ToECC = uncurry ECC.Point . P256.pointToIntegers
+pointP256ToECC p
+    | P256.pointIsAtInfinity p = ECC.PointO
+    | otherwise = uncurry ECC.Point (P256.pointToIntegers p)
 
 i2ospScalar :: Integer -> Bytes
 i2ospScalar i =
@@ -145,8 +147,11 @@ tests =
                     t = P256.pointFromIntegers (xT, yT)
                     r = P256.pointFromIntegers (xR, yR)
                  in r @=? P256.pointAdd s t
+            , testProperty "point-add-infinity" casePointAddInfinity
             , testProperty "lift-to-curve" propertyLiftToCurve
             , testProperty "point-add" propertyPointAdd
+            , testProperty "point-add-infinity-identity" propertyPointAddInfinityIdentity
+            , testProperty "point-add-inverse" propertyPointAddInverse
             , testProperty "point-negate" propertyPointNegate
             , testProperty "point-mul" propertyPointMul
             , testProperty "infinity" $
@@ -198,4 +203,49 @@ tests =
          in propertyHold
                 [ eqTest "p256" pR (P256.pointMul (unP256Scalar s) p)
                 , eqTest "ecc" peR (pointP256ToECC pR)
+                ]
+
+    pointInfinity :: P256.Point
+    pointInfinity = P256.pointFromIntegers (0, 0)
+
+    casePointAddInfinity =
+        propertyHold
+            [ eqTest
+                "infinity + base"
+                P256.pointBase
+                (P256.pointAdd pointInfinity P256.pointBase)
+            , eqTest
+                "base + infinity"
+                P256.pointBase
+                (P256.pointAdd P256.pointBase pointInfinity)
+            , eqTest
+                "infinity + infinity"
+                pointInfinity
+                (P256.pointAdd pointInfinity pointInfinity)
+            ]
+
+    propertyPointAddInfinityIdentity r =
+        let p = P256.toPoint (unP256Scalar r)
+         in propertyHold
+                [ eqTest
+                    "infinity + p"
+                    p
+                    (P256.pointAdd pointInfinity p)
+                , eqTest
+                    "p + infinity"
+                    p
+                    (P256.pointAdd p pointInfinity)
+                ]
+
+    propertyPointAddInverse r =
+        let p = P256.toPoint (unP256Scalar r)
+         in propertyHold
+                [ eqTest
+                    "p + negate p"
+                    True
+                    (P256.pointIsAtInfinity (P256.pointAdd p (P256.pointNegate p)))
+                , eqTest
+                    "negate p + p"
+                    True
+                    (P256.pointIsAtInfinity (P256.pointAdd (P256.pointNegate p) p))
                 ]

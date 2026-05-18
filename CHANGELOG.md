@@ -1,5 +1,10 @@
 # CHANGELOG for crypton
 
+## 1.1.3
+
+* Ensure that `pointAdd` in `PubKey.ECC.P256` treats the point at infinity as the additive identity.
+  [#73](https://github.com/kazu-yamamoto/crypton/pull/73)
+
 ## 1.1.2
 
 * Preparing `ram` v0.22.
