@@ -1,5 +1,9 @@
 # CHANGELOG for crypton
 
+## 1.1.4
+
+* Generic instance for RSA PublicKey and PrivateKey
+
 ## 1.1.3
 
 * Ensure that `pointAdd` in `PubKey.ECC.P256` treats the point at infinity as the additive identity.
