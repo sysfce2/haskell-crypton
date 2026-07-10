@@ -45,7 +45,9 @@ module Crypto.Cipher.AES.Primitive (
 
     -- * Incremental OCB
     ocbMode,
+    ocbModeWithTagLength,
     ocbInit,
+    ocbInitWithTagLength,
 
     -- * CCM
     ccmMode,
@@ -108,6 +110,15 @@ ocbMode aes =
         , aeadImplEncrypt = ocbAppendEncrypt aes
         , aeadImplDecrypt = ocbAppendDecrypt aes
         , aeadImplFinalize = ocbFinish aes
+        }
+
+ocbModeWithTagLength :: AES -> Int -> AEADModeImpl AESOCB
+ocbModeWithTagLength aes taglen =
+    AEADModeImpl
+        { aeadImplAppendHeader = ocbAppendAAD aes
+        , aeadImplEncrypt = ocbAppendEncrypt aes
+        , aeadImplDecrypt = ocbAppendDecrypt aes
+        , aeadImplFinalize = \ocb _ -> ocbFinish aes ocb taglen
         }
 
 -- | Create an AES AEAD implementation for CCM
@@ -529,8 +540,35 @@ ocbInit :: ByteArrayAccess iv => AES -> iv -> AESOCB
 ocbInit ctx iv = unsafeDoIO $ do
     sm <- B.alloc sizeOCB $ \ocbStPtr ->
         withKeyAndIV ctx iv $ \k v ->
-            c_aes_ocb_init (castPtr ocbStPtr) k v (fromIntegral $ B.length iv)
+            c_aes_ocb_init
+                (castPtr ocbStPtr)
+                k
+                v
+                (fromIntegral $ B.length iv)
+                16
     return $ AESOCB sm
+
+-- | initialize an OCB context with a fixed authentication tag length.
+--
+-- The tag length is expressed in bytes and must be in [0..16].
+-- The IV length must be in [1..15] bytes per RFC 7253.
+{-# NOINLINE ocbInitWithTagLength #-}
+ocbInitWithTagLength :: ByteArrayAccess iv => AES -> iv -> Int -> CryptoFailable AESOCB
+ocbInitWithTagLength ctx iv taglen
+    | taglen < 0 || taglen > 16 = CryptoFailed CryptoError_AuthenticationTagSizeInvalid
+    | ivlen < 1 || ivlen > 15 = CryptoFailed CryptoError_IvSizeInvalid
+    | otherwise = CryptoPassed $ unsafeDoIO $ do
+        sm <- B.alloc sizeOCB $ \ocbStPtr ->
+            withKeyAndIV ctx iv $ \k v ->
+                c_aes_ocb_init
+                    (castPtr ocbStPtr)
+                    k
+                    v
+                    (fromIntegral ivlen)
+                    (fromIntegral taglen)
+        return $ AESOCB sm
+  where
+    ivlen = B.length iv
 
 -- | append data which is going to just be authenticated to the OCB context.
 --
@@ -722,7 +760,8 @@ foreign import ccall "crypton_aes.h crypton_aes_gcm_finish"
     c_aes_gcm_finish :: CString -> Ptr AESGCM -> Ptr AES -> IO ()
 
 foreign import ccall "crypton_aes.h crypton_aes_ocb_init"
-    c_aes_ocb_init :: Ptr AESOCB -> Ptr AES -> Ptr Word8 -> CUInt -> IO ()
+    c_aes_ocb_init
+        :: Ptr AESOCB -> Ptr AES -> Ptr Word8 -> CUInt -> CUInt -> IO ()
 
 foreign import ccall "crypton_aes.h crypton_aes_ocb_aad"
     c_aes_ocb_aad :: Ptr AESOCB -> Ptr AES -> CString -> CUInt -> IO ()

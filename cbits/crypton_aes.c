@@ -655,7 +655,7 @@ static void ocb_get_L_i(block128 *l, block128 *lis, unsigned int i)
 #undef L_CACHED
 }
 
-void crypton_aes_ocb_init(aes_ocb *ocb, aes_key *key, uint8_t *iv, uint32_t len)
+void crypton_aes_ocb_init(aes_ocb *ocb, aes_key *key, uint8_t *iv, uint32_t len, uint32_t taglen)
 {
 	block128 tmp, nonce, ktop;
 	unsigned char stretch[24];
@@ -664,6 +664,9 @@ void crypton_aes_ocb_init(aes_ocb *ocb, aes_key *key, uint8_t *iv, uint32_t len)
 	/* we don't accept more than 15 bytes, any bytes higher will be ignored. */
 	if (len > 15) {
 		len = 15;
+	}
+	if (taglen > 16) {
+		taglen = 16;
 	}
 
 	/* create L*, and L$,L0,L1,L2,L3 */
@@ -678,9 +681,11 @@ void crypton_aes_ocb_init(aes_ocb *ocb, aes_key *key, uint8_t *iv, uint32_t len)
 
 	/* create strech from the nonce */
 	block128_zero(&nonce);
-	memcpy(nonce.b + 4, iv, 12);
-	nonce.b[0] = (unsigned char)(((16 * 8) % 128) << 1);
-	nonce.b[16-12-1] |= 0x01;
+	if (len > 0) {
+		memcpy(nonce.b + (16 - len), iv, len);
+		nonce.b[16 - len - 1] |= 0x01;
+	}
+	nonce.b[0] |= (unsigned char)(((taglen * 8) % 128) << 1);
 	bottom = nonce.b[15] & 0x3F;
 	nonce.b[15] &= 0xC0;
 	crypton_aes_encrypt_block(&ktop, key, &nonce);
