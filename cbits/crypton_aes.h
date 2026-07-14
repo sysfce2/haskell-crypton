@@ -109,7 +109,7 @@ void crypton_aes_gcm_encrypt(uint8_t *output, aes_gcm *gcm, aes_key *key, uint8_
 void crypton_aes_gcm_decrypt(uint8_t *output, aes_gcm *gcm, aes_key *key, uint8_t *input, uint32_t length);
 void crypton_aes_gcm_finish(uint8_t *tag, aes_gcm *gcm, aes_key *key);
 
-void crypton_aes_ocb_init(aes_ocb *ocb, aes_key *key, uint8_t *iv, uint32_t len);
+void crypton_aes_ocb_init(aes_ocb *ocb, aes_key *key, uint8_t *iv, uint32_t len, uint32_t taglen);
 void crypton_aes_ocb_aad(aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
 void crypton_aes_ocb_encrypt(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
 void crypton_aes_ocb_decrypt(uint8_t *output, aes_ocb *ocb, aes_key *key, uint8_t *input, uint32_t length);
