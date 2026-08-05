@@ -21,7 +21,7 @@ module Crypto.Number.ModArithmetic (
     squareRoot,
 ) where
 
-import Control.Exception (Exception, throw)
+import qualified Control.Exception as E
 import Crypto.Number.Basic
 import Crypto.Number.Compat
 
@@ -29,7 +29,7 @@ import Crypto.Number.Compat
 data CoprimesAssertionError = CoprimesAssertionError
     deriving (Show)
 
-instance Exception CoprimesAssertionError
+instance E.Exception CoprimesAssertionError
 
 -- | Compute the modular exponentiation of base^exponent using
 -- algorithms design to avoid side channels and timing measurement
@@ -109,7 +109,7 @@ inverse g m = gmpInverse g m `onGmpUnsupported` v
 inverseCoprimes :: Integer -> Integer -> Integer
 inverseCoprimes g m =
     case inverse g m of
-        Nothing -> throw CoprimesAssertionError
+        Nothing -> E.throw CoprimesAssertionError
         Just i -> i
 
 -- | Computes the Jacobi symbol (a/n).
@@ -148,7 +148,7 @@ inverseFermat g p = expSafe g (p - 2) p
 data ModulusAssertionError = ModulusAssertionError
     deriving (Show)
 
-instance Exception ModulusAssertionError
+instance E.Exception ModulusAssertionError
 
 -- | Modular square root of @g@ modulo a prime @p@.
 --
@@ -159,7 +159,7 @@ instance Exception ModulusAssertionError
 -- parameters only.
 squareRoot :: Integer -> Integer -> Maybe Integer
 squareRoot p
-    | p < 2 = throw ModulusAssertionError
+    | p < 2 = E.throw ModulusAssertionError
     | otherwise =
         case p `divMod` 8 of
             (v, 3) -> method1 (2 * v + 1)
@@ -167,7 +167,7 @@ squareRoot p
             (u, 5) -> method2 u
             (_, 1) -> tonelliShanks p
             (0, 2) -> \a -> Just (if even a then 0 else 1)
-            _ -> throw ModulusAssertionError
+            _ -> E.throw ModulusAssertionError
   where
     x `eqMod` y = (x - y) `mod` p == 0
 
@@ -202,7 +202,7 @@ tonelliShanks p a
                             (expFast aa s p)
                             (expFast n s p)
                             e
-                | otherwise -> throw ModulusAssertionError
+                | otherwise -> E.throw ModulusAssertionError
   where
     aa = a `mod` p
     p1 = p - 1

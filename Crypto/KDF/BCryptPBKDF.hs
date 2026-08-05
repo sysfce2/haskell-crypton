@@ -13,7 +13,7 @@ module Crypto.KDF.BCryptPBKDF (
 )
 where
 
-import Control.Exception (finally)
+import qualified Control.Exception as E
 import Control.Monad (when)
 import qualified Crypto.Cipher.Blowfish.Box as Blowfish
 import qualified Crypto.Cipher.Blowfish.Primitive as Blowfish
@@ -187,4 +187,4 @@ hashInternalMutable bfks passHash saltHash outPtr = do
 
 finallyErase :: ForeignPtr Word8 -> Int -> IO () -> IO ()
 finallyErase fp len action =
-    action `finally` withForeignPtr fp (\ptr -> memSet ptr 0 len)
+    action `E.finally` withForeignPtr fp (\ptr -> memSet ptr 0 len)
