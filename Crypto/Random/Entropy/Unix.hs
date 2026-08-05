@@ -11,10 +11,11 @@ module Crypto.Random.Entropy.Unix (
     DevURandom,
 ) where
 
-import Control.Exception as E
+import qualified Control.Exception as E
 import Crypto.Random.Entropy.Source
 import Data.Word (Word8)
 import Foreign.Ptr
+import qualified System.IO.Error as E
 
 -- import System.Posix.Types (Fd)
 import System.IO
@@ -49,7 +50,7 @@ testOpen filepath = do
 
 openDev :: String -> IO (Maybe H)
 openDev filepath =
-    (Just `fmap` openAndNoBuffering) `E.catch` \(_ :: IOException) -> return Nothing
+    (Just `fmap` openAndNoBuffering) `E.catchIOError` \_ -> return Nothing
   where
     openAndNoBuffering = do
         h <- openBinaryFile filepath ReadMode
@@ -64,14 +65,14 @@ withDev filepath f =
             Just fd -> f fd `E.finally` closeDev fd
 
 closeDev :: H -> IO ()
-closeDev h = hClose h `E.catch` \(_ :: IOException) -> return ()
+closeDev h = hClose h `E.catchIOError` \_ -> return ()
 
 gatherDevEntropy :: H -> Ptr Word8 -> Int -> IO Int
 gatherDevEntropy h ptr sz =
     (fromIntegral `fmap` hGetBufSome h ptr (fromIntegral sz))
-        `E.catch` \(_ :: IOException) -> return 0
+        `E.catchIOError` \_ -> return 0
 
 gatherDevEntropyNonBlock :: H -> Ptr Word8 -> Int -> IO Int
 gatherDevEntropyNonBlock h ptr sz =
     (fromIntegral `fmap` hGetBufNonBlocking h ptr (fromIntegral sz))
-        `E.catch` \(_ :: IOException) -> return 0
+        `E.catchIOError` \_ -> return 0
