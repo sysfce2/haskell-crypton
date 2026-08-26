@@ -247,6 +247,90 @@ instance HashAlgorithmASN1 SHA512t_256 where
             , 0x04
             , 0x20
             ]
+instance HashAlgorithmASN1 SHA3_224 where
+    hashDigestASN1 =
+        addDigestPrefix
+            [ 0x30
+            , 0x2b
+            , 0x30
+            , 0x0b
+            , 0x06
+            , 0x09
+            , 0x60
+            , 0x86
+            , 0x48
+            , 0x01
+            , 0x65
+            , 0x03
+            , 0x04
+            , 0x02
+            , 0x07
+            , 0x04
+            , 0x1c
+            ]
+instance HashAlgorithmASN1 SHA3_256 where
+    hashDigestASN1 =
+        addDigestPrefix
+            [ 0x30
+            , 0x2f
+            , 0x30
+            , 0x0b
+            , 0x06
+            , 0x09
+            , 0x60
+            , 0x86
+            , 0x48
+            , 0x01
+            , 0x65
+            , 0x03
+            , 0x04
+            , 0x02
+            , 0x08
+            , 0x04
+            , 0x20
+            ]
+instance HashAlgorithmASN1 SHA3_384 where
+    hashDigestASN1 =
+        addDigestPrefix
+            [ 0x30
+            , 0x3f
+            , 0x30
+            , 0x0b
+            , 0x06
+            , 0x09
+            , 0x60
+            , 0x86
+            , 0x48
+            , 0x01
+            , 0x65
+            , 0x03
+            , 0x04
+            , 0x02
+            , 0x09
+            , 0x04
+            , 0x30
+            ]
+instance HashAlgorithmASN1 SHA3_512 where
+    hashDigestASN1 =
+        addDigestPrefix
+            [ 0x30
+            , 0x4f
+            , 0x30
+            , 0x0b
+            , 0x06
+            , 0x09
+            , 0x60
+            , 0x86
+            , 0x48
+            , 0x01
+            , 0x65
+            , 0x03
+            , 0x04
+            , 0x02
+            , 0x0a
+            , 0x04
+            , 0x40
+            ]
 instance HashAlgorithmASN1 RIPEMD160 where
     hashDigestASN1 =
         addDigestPrefix
@@ -283,7 +367,7 @@ instance HashAlgorithmASN1 RIPEMD160 where
 --   Start Sequence
 --     ,Start Sequence
 --       ,OID oid
---       ,Null
+--       ,optional parameters (Null for SHA-2, absent for SHA-3)
 --     ,End Sequence
 --     ,OctetString digest
 --   ,End Sequence
