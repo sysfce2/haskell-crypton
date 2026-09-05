@@ -104,7 +104,9 @@ static crypton_p256_digit subTop(crypton_p256_digit top_a,
   borrow += top_c;
   borrow -= top_a;
   top_c = (crypton_p256_digit)borrow;
-  assert((borrow >> P256_BITSPERDIGIT) == 0);
+  /* A borrow out is a legitimate outcome: the quotient estimate in
+     crypton_p256_modmul can exceed the true quotient by one.  Report it in
+     the returned top digit (all ones) and let the caller correct. */
   return top_c;
 }
 
@@ -177,6 +179,13 @@ void crypton_p256_modmul(const crypton_p256_int* MOD,
 
     // Subtract reducer from top | tmp.
     top = subTop(top_reducer, reducer, top, tmp + i);
+
+    // The quotient estimate above can exceed the true quotient by one --
+    // with 64-bit digits, whenever the low half of top is zero and the
+    // digits below it are small -- and the subtraction then borrows.  The
+    // deficit is always less than MOD, so adding MOD back once restores
+    // the invariant.
+    top = addM(MOD, top, tmp + i, 0 - (top >> (P256_BITSPERDIGIT - 1)));
 
     // top is now either 0 or 1. Make it 0, fixed-timing.
     assert(top <= 1);
