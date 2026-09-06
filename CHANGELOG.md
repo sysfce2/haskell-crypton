@@ -1,5 +1,18 @@
 # CHANGELOG for crypton
 
+## 1.1.5
+
+* fix(aead): reject undersized tags
+  [#80](https://github.com/kazu-yamamoto/crypton/pull/80)
+* fix(aes): refuse a zero-length AES-GCM IV
+  [#79](https://github.com/kazu-yamamoto/crypton/pull/79)
+* fix(p256): prevent crashes when validating valid points
+  [#78](https://github.com/kazu-yamamoto/crypton/pull/78)
+* feat(asn1): add SHA-3 HashAlgorithmASN1 instances for PKCS#1 v1.5
+  [#77](https://github.com/kazu-yamamoto/crypton/pull/77)
+* OCB3 conformance
+  [#76](https://github.com/kazu-yamamoto/crypton/pull/76)
+
 ## 1.1.4
 
 * Generic instance for RSA PublicKey and PrivateKey
