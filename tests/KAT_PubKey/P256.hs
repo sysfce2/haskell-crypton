@@ -73,6 +73,14 @@ yT = 0x5421c3209c2d6c704835d82ac4c3dd90f61a8a52598b9e7ab656e9d8c8b24316
 xR = 0x72b13dd4354b6b81745195e98cc5ba6970349191ac476bd4553cf35a545a067e
 yR = 0x8d585cbb2e1327d75241a8a122d7620dc33b13315aa5c9d46d013011744ac264
 
+-- Two points on the curve whose validation reduces a product whose top
+-- digit has a zero low half: x = 2^96, and an x with a repeating bit
+-- pattern.  Wycheproof ecdh_secp256r1_ecpoint tcId 74 and 93.
+xU = 0x0000000000000000000000000000000000000001000000000000000000000000
+yU = 0x7d12de58d54423eb85ae8d157ae416fb004a7eb522ac1b67047ef3cdf9acdc3f
+xV = 0x8000003ffffff0000007fffffe000000ffffffc000001ffffff8000003fffffc
+yV = 0x0c3527bd081c1c07b313bc1a0c3f845fb2fe22557699ccc8f1354e61a27b7f88
+
 tests =
     testGroup
         "P256"
@@ -142,6 +150,12 @@ tests =
             , testCase "valid-point-1" $ casePointIsValid (xS, yS)
             , testCase "valid-point-2" $ casePointIsValid (xR, yR)
             , testCase "valid-point-3" $ casePointIsValid (xT, yT)
+            , -- The quotient estimate in crypton_p256_modmul can exceed the
+              -- true quotient, and the resulting borrow used to abort the
+              -- process on an assertion inside the reduction rather than
+              -- being corrected.  Both points below are on the curve.
+              testCase "valid-point-reduction-1" $ casePointIsValid (xU, yU)
+            , testCase "valid-point-reduction-2" $ casePointIsValid (xV, yV)
             , testCase "point-add-1" $
                 let s = P256.pointFromIntegers (xS, yS)
                     t = P256.pointFromIntegers (xT, yT)
