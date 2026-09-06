@@ -12,6 +12,7 @@ import Crypto.Error
 import Crypto.Hash.Algorithms
 import Crypto.Hash.IO
 import qualified Crypto.PubKey.EdDSA as EdDSA
+import Data.ByteArray.Encoding (Base (Base16), convertFromBase)
 import Imports
 
 data Vec
@@ -156,10 +157,76 @@ doVerifyTest i Vec{..} =
     !sig = throwCryptoError $ EdDSA.signature vecPrx vecAlg vecSig
     !pub = throwCryptoError $ EdDSA.publicKey vecPrx vecAlg vecPub
 
+unhex :: ByteString -> ByteString
+unhex = either error id . convertFromBase Base16
+
+-- | Invalid signatures from Wycheproof's ed25519_test.json.
+data NegVec
+    = forall curve hash.
+      ( EdDSA.EllipticCurveEdDSA curve
+      , HashAlgorithm hash
+      , HashDigestSize hash ~ EdDSA.CurveDigestSize curve
+      ) =>
+    NegVec
+    { negPrx :: Maybe curve
+    , negAlg :: hash
+    , negTc :: Int
+    , negWhy :: String
+    , negPub :: ByteString
+    , negMsg :: ByteString
+    , negSig :: ByteString
+    }
+
+negVectors =
+    [ ed25519Neg 63 "s replaced by s + L"
+        "7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa"
+        "54657374"
+        "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab067654bce3832c2d76f8f6f5dafc08d9339d4eef676573336a5c51eb6f946b31d"
+    , ed25519Neg 64 "s replaced by s + 2L"
+        "7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa"
+        "54657374"
+        "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab05439412b5395d42f462c67008eba6ca839d4eef676573336a5c51eb6f946b32d"
+    , ed25519Neg 65 "s replaced by s + 4L"
+        "7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa"
+        "54657374"
+        "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab02ee12ce5875bf9dff26556464bae2ad239d4eef676573336a5c51eb6f946b34d"
+    , ed25519Neg 66 "s replaced by s + 8L"
+        "7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa"
+        "54657374"
+        "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab0e2300459f1e742404cd934d2c595a6253ad4eef676573336a5c51eb6f946b38d"
+    , ed25519Neg 85 "s just above the bound"
+        "100fdf47fb94f1536a4f7c3fda27383fa03375a8f527c537e6f1703c47f94f86"
+        "6a0bc2b0057cedfc0fa2e3f7f7d39279b30f454a69dfd1117c758d86b19d85e0"
+        "0971f86d2c9c78582524a103cb9cf949522ae528f8054dc20107d999be673ff4e25ebf2f2928766b1248bec6e91697775f8446639ede46ad4df4053000000010"
+    , ed25519Neg 151 "R encodes y = 1 with the sign bit of x set"
+        "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+        "313233343030"
+        "0100000000000000000000000000000000000000000000000000000000000080c803ee1f2342aa96ff698a393d1ab5e66f3eda101d6d120b394c3fd32c117d0a"
+    ]
+  where
+    ed25519Neg tc why pub msg sig =
+        NegVec
+            { negPrx = Just Curve_Edwards25519
+            , negAlg = SHA512
+            , negTc = tc
+            , negWhy = why
+            , negPub = unhex pub
+            , negMsg = unhex msg
+            , negSig = unhex sig
+            }
+
+doNegVerifyTest :: NegVec -> TestTree
+doNegVerifyTest NegVec{..} =
+    testCase (show negTc ++ ": " ++ negWhy) (False @=? EdDSA.verify negPrx pub negMsg sig)
+  where
+    !sig = throwCryptoError $ EdDSA.signature negPrx negAlg negSig
+    !pub = throwCryptoError $ EdDSA.publicKey negPrx negAlg negPub
+
 tests =
     testGroup
         "EdDSA"
         [ testGroup "gen publickey" $ zipWith doPublicKeyTest [katZero ..] vectors
         , testGroup "gen signature" $ zipWith doSignatureTest [katZero ..] vectors
         , testGroup "verify sig" $ zipWith doVerifyTest [katZero ..] vectors
+        , testGroup "reject non-canonical encoding" $ map doNegVerifyTest negVectors
         ]
