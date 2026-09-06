@@ -89,7 +89,7 @@ ED25519_FN(ed25519_sign_open) (const unsigned char *m, size_t mlen, const ed2551
 	ge25519 ALIGN(16) R, A;
 	hash_512bits hash;
 	bignum256modm hram, S;
-	unsigned char checkR[32];
+	unsigned char checkR[32], checkS[32];
 
 	if ((RS[63] & 224) || !ge25519_unpack_negative_vartime(&A, pk))
 		return -1;
@@ -100,6 +100,11 @@ ED25519_FN(ed25519_sign_open) (const unsigned char *m, size_t mlen, const ed2551
 
 	/* S */
 	expand256_modm(S, RS + 32, 32);
+
+	/* check that S is canonical */
+	contract256_modm(checkS, S);
+	if (!ed25519_verify(RS + 32, checkS, 32))
+		return -1;
 
 	/* SB - H(R,A,m)A */
 	ge25519_double_scalarmult_vartime(&R, &A, hram, S);
