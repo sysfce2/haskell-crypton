@@ -390,11 +390,13 @@ decodeSignature
     => proxy curve
     -> Signature curve hash
     -> CryptoFailable (Bytes, Point curve, Scalar curve)
-decodeSignature prx (Signature bs) = do
+decodeSignature prx sig@(Signature bs) = do
     let (bsR, bsS) = B.splitAt (publicKeySize prx) bs
     pR <- decodePoint prx bsR
     sS <- decodeScalarLE prx bsS
-    return (bsR, pR, sS)
+    if encodeSignature prx (encodePoint prx pR, pR, sS) == sig
+        then return (bsR, pR, sS)
+        else CryptoFailed CryptoError_PointFormatInvalid
 
 -- implementations are supposed to decode any scalar up to the size of the digest
 decodeScalarNoErr
